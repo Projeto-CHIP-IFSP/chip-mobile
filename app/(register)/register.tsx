@@ -5,7 +5,6 @@ import {
   StyleSheet, 
   KeyboardAvoidingView, 
   Platform,
-  Image,
   TouchableWithoutFeedback,
   Keyboard
 } from 'react-native';
@@ -14,25 +13,29 @@ import { Button } from '../../src/components/Button';
 import { Input } from '../../src/components/Input';
 import { useRouter } from 'expo-router';
 
-//Imports do Firebase
-import { signInWithEmailAndPassword } from 'firebase/auth';
+// Imports do firebase
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../src/services/firebaseConfig';
+//
+export default function RegisterScreen() {
+  const router = useRouter();
 
-export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const router = useRouter();
-  
-  // Estados de erro
+  const [confirmPassword, setConfirmPassword] = useState('');
+
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  
+  const [confirmError, setConfirmError] = useState('');
+
   const [isLoading, setIsLoading] = useState(false);
 
   const validateForm = () => {
     let isValid = true;
+
     setEmailError('');
     setPasswordError('');
+    setConfirmError('');
 
     // Validação de E-mail via Regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -44,37 +47,50 @@ export default function LoginScreen() {
       isValid = false;
     }
 
-    // Validação de Senha
+    // Verifica senha e confirmação de senha
     if (!password) {
       setPasswordError('A senha é obrigatória.');
+      isValid = false;
+    }
+
+    if (!confirmPassword) {
+      setConfirmError('Confirmar sua senha é obrigatório.');
+      isValid = false;
+    }
+
+    // Verificam se as senhas são equivalentes
+    if (password !== confirmPassword) {
+      setConfirmError('As senhas não coincidem.');
       isValid = false;
     }
 
     return isValid;
   };
 
-  const handleLogin = async () => {
+  const handleRegister = async () => {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    
+
     try {
-      // Tentativa de login no firebase
-      await signInWithEmailAndPassword(auth, email, password);
+      // Tentativa de criar um usuário no firebase
+      await createUserWithEmailAndPassword(auth, email, password);
       setTimeout(() => {
         setIsLoading(false);
-        router.replace('/(hub)/dashboard'); 
+        router.replace('/(hub)/dashboard');
       }, 1500);
-    } catch (e) {
-      // Caso ocorra erro ao logar
+    } catch (e: any) {
       setIsLoading(false);
-      setPasswordError('E-mail ou senha incorretos.');
+      
+      // No caso de erro, retorna um dos seguintes avisos
+      if (e.code === 'auth/email-already-in-use') {
+        setEmailError('Esse e-mail já está cadastrado.');
+      } else if (e.code === 'auth/weak-password') {
+        setPasswordError('A senha é muito fraca.');
+      } else {
+        setPasswordError('Erro ao criar sua conta.');
+      }
     }
-  };
-
-  const handleRegister = () => {
-    router.push('/(register)/register');
-    // TODO: Navegar para tela de registro do Expo Router -> router.push('/register')
   };
 
   return (
@@ -85,13 +101,8 @@ export default function LoginScreen() {
       >
         <View style={styles.content}>
           <View style={styles.header}>
-            <Image 
-              source={require('../../assets/images/icon.png')} 
-              style={styles.logo}
-              resizeMode="cover"
-            />
-            <Text style={styles.title}>Bem-vindo de volta!</Text>
-            <Text style={styles.subtitle}>Pronto para manter o foco hoje?</Text>
+            <Text style={styles.title}>Vamos criar sua conta!</Text>
+            <Text style={styles.subtitle}>Mas antes precisamos de algumas informações...</Text>
           </View>
 
           <View style={styles.form}>
@@ -122,17 +133,29 @@ export default function LoginScreen() {
               }}
             />
 
+            <Input
+              label="Confirmar senha"
+              placeholder="Confirme sua senha"
+              secureTextEntry
+              autoCapitalize="none"
+              value={confirmPassword}
+              error={confirmError}
+              onChangeText={(text) => {
+                setConfirmPassword(text);
+                if (confirmError) setConfirmError(''); // Limpa o erro ao digitar
+              }}
+            />
+
             <Button 
-              title="Entrar" 
-              onPress={handleLogin} 
+              title="Cadastrar" 
+              onPress={handleRegister} 
               isLoading={isLoading} 
             />
 
             <Button 
-              title="Criar nova conta" 
-              variant="ghost" 
-              onPress={handleRegister} 
-              disabled={isLoading}
+              title="Já possuo uma conta" 
+              variant="ghost"
+              onPress={() => router.back()}
             />
           </View>
         </View>
@@ -153,21 +176,14 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    borderRadius: 50, // Garante que a imagem quadrada fique perfeitamente redonda
-    overflow: 'hidden',
-    marginBottom: 24,
+    marginBottom: 47,
   },
   title: {
     fontFamily: theme.fonts.bold,
-    fontSize: 28,
-    color: theme.colors.text,
-    marginBottom: 8,
+    fontSize: 24,
     textAlign: 'center',
+    marginBottom: 8,
+    color: theme.colors.text,
   },
   subtitle: {
     fontFamily: theme.fonts.regular,
