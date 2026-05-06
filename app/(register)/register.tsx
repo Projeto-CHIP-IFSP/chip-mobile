@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 // Imports do firebase
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../src/services/firebaseConfig';
-//
+
 export default function RegisterScreen() {
   const router = useRouter();
 
