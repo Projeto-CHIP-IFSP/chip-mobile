@@ -61,20 +61,18 @@ export default function LoginScreen() {
     try {
       // Tentativa de login no firebase
       await signInWithEmailAndPassword(auth, email, password);
-      setTimeout(() => {
-        setIsLoading(false);
-        router.replace('/(hub)/dashboard'); 
-      }, 1500);
+      setIsLoading(false);
+      router.replace('/(hub)/dashboard'); 
     } catch (e) {
       // Caso ocorra erro ao logar
       setIsLoading(false);
+      setEmailError('E-mail ou senha incorretos.');
       setPasswordError('E-mail ou senha incorretos.');
     }
   };
 
   const handleRegister = () => {
     router.push('/(register)/register');
-    // TODO: Navegar para tela de registro do Expo Router -> router.push('/register')
   };
 
   return (

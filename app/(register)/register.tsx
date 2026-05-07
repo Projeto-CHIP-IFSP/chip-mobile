@@ -1,3 +1,4 @@
+// app/(login)/register.tsx
 import React, { useState } from 'react';
 import { 
   View, 
@@ -6,12 +7,16 @@ import {
   KeyboardAvoidingView, 
   Platform,
   TouchableWithoutFeedback,
-  Keyboard
+  Keyboard,
+  TouchableOpacity // Mantido para o clique do ícone
 } from 'react-native';
 import { theme } from '../../src/constants/theme';
 import { Button } from '../../src/components/Button';
 import { Input } from '../../src/components/Input';
 import { useRouter } from 'expo-router';
+
+// NOVO: Importando ícones padrão do Expo
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // Imports do firebase
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -29,15 +34,41 @@ export default function RegisterScreen() {
   const [confirmError, setConfirmError] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const getPasswordStrengthLevel = (pass: string) => {
+    if (!pass) return 0;
+    if (pass.length < 6) return 1; // Muito Fraca
+    
+    const hasNumber = /\d/.test(pass);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(pass);
+    const hasUpper = /[A-Z]/.test(pass);
+
+    // Média: tamanho aceitável, mas falta complexidade
+    if (pass.length < 8 || !(hasNumber && hasSpecial && hasUpper)) {
+      return 2;
+    }
+    
+    return 3;
+  };
+
+  const strengthLevel = getPasswordStrengthLevel(password);
+
+  const getStrengthColor = (level: number) => {
+    switch (level) {
+      case 1: return '#EF4444'; // Vermelho (Fraca)
+      case 2: return '#F59E0B'; // Laranja (Média)
+      case 3: return '#10B981'; // Verde (Forte)
+      default: return '#E5E7EB'; // Cinza claro (Vazio)
+    }
+  };
 
   const validateForm = () => {
     let isValid = true;
-
     setEmailError('');
     setPasswordError('');
     setConfirmError('');
 
-    // Validação de E-mail via Regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) {
       setEmailError('O e-mail é obrigatório.');
@@ -47,9 +78,11 @@ export default function RegisterScreen() {
       isValid = false;
     }
 
-    // Verifica senha e confirmação de senha
     if (!password) {
       setPasswordError('A senha é obrigatória.');
+      isValid = false;
+    } else if (password.length < 6) {
+      setPasswordError('A senha deve ter pelo menos 6 caracteres.');
       isValid = false;
     }
 
@@ -58,7 +91,6 @@ export default function RegisterScreen() {
       isValid = false;
     }
 
-    // Verificam se as senhas são equivalentes
     if (password !== confirmPassword) {
       setConfirmError('As senhas não coincidem.');
       isValid = false;
@@ -69,20 +101,14 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!validateForm()) return;
-
     setIsLoading(true);
 
     try {
-      // Tentativa de criar um usuário no firebase
       await createUserWithEmailAndPassword(auth, email, password);
-      setTimeout(() => {
-        setIsLoading(false);
-        router.replace('/(hub)/dashboard');
-      }, 1500);
+      setIsLoading(false);
+      router.replace('/(login)/login');
     } catch (e: any) {
       setIsLoading(false);
-      
-      // No caso de erro, retorna um dos seguintes avisos
       if (e.code === 'auth/email-already-in-use') {
         setEmailError('Esse e-mail já está cadastrado.');
       } else if (e.code === 'auth/weak-password') {
@@ -92,6 +118,16 @@ export default function RegisterScreen() {
       }
     }
   };
+
+  const TogglePasswordIcon = () => (
+    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+      <MaterialCommunityIcons 
+        name={showPassword ? 'eye-off' : 'eye'} 
+        size={22} 
+        color={theme.colors.gray} 
+      />
+    </TouchableOpacity>
+  );
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -116,33 +152,56 @@ export default function RegisterScreen() {
               error={emailError}
               onChangeText={(text) => {
                 setEmail(text);
-                if (emailError) setEmailError(''); // Limpa o erro ao digitar
+                if (emailError) setEmailError('');
               }}
             />
 
             <Input
               label="Senha"
               placeholder="Preencha com sua senha"
-              secureTextEntry
+              secureTextEntry={!showPassword}
               autoCapitalize="none"
               value={password}
               error={passwordError}
+              rightElement={<TogglePasswordIcon />} 
               onChangeText={(text) => {
                 setPassword(text);
-                if (passwordError) setPasswordError(''); // Limpa o erro ao digitar
+                if (passwordError) setPasswordError('');
               }}
             />
+
+            {/* MODIFICADO: Mostrador de força como uma barra segmentada */}
+            {password.length > 0 && (
+              <View style={styles.strengthBarContainer}>
+                {/* Segmento 1: Fraca */}
+                <View style={[
+                  styles.strengthSegment, 
+                  { backgroundColor: strengthLevel >= 1 ? getStrengthColor(strengthLevel) : '#E5E7EB' }
+                ]} />
+                {/* Segmento 2: Média */}
+                <View style={[
+                  styles.strengthSegment, 
+                  { backgroundColor: strengthLevel >= 2 ? getStrengthColor(strengthLevel) : '#E5E7EB' }
+                ]} />
+                {/* Segmento 3: Forte */}
+                <View style={[
+                  styles.strengthSegment, 
+                  { backgroundColor: strengthLevel >= 3 ? getStrengthColor(strengthLevel) : '#E5E7EB' }
+                ]} />
+              </View>
+            )}
 
             <Input
               label="Confirmar senha"
               placeholder="Confirme sua senha"
-              secureTextEntry
+              secureTextEntry={!showPassword}
               autoCapitalize="none"
               value={confirmPassword}
               error={confirmError}
+              rightElement={<TogglePasswordIcon />} 
               onChangeText={(text) => {
                 setConfirmPassword(text);
-                if (confirmError) setConfirmError(''); // Limpa o erro ao digitar
+                if (confirmError) setConfirmError('');
               }}
             />
 
@@ -194,5 +253,19 @@ const styles = StyleSheet.create({
   form: {
     width: '100%',
     alignItems: 'center',
+  },
+  strengthBarContainer: {
+    flexDirection: 'row',
+    height: 6,
+    width: '100%',
+    marginBottom: 20,
+    marginTop: -10, 
+    gap: 4, 
+    paddingHorizontal: 4, 
+  },
+  strengthSegment: {
+    flex: 1, 
+    borderRadius: 3,
+    backgroundColor: '#E5E7EB', 
   },
 });
