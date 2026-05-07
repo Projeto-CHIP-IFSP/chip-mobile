@@ -14,6 +14,10 @@ import { Button } from '../../src/components/Button';
 import { Input } from '../../src/components/Input';
 import { useRouter } from 'expo-router';
 
+//Imports do Firebase
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../src/services/firebaseConfig';
+
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,16 +57,22 @@ export default function LoginScreen() {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    // TODO: Integrar autenticação Firebase (signInWithEmailAndPassword)
-    setTimeout(() => {
+    
+    try {
+      // Tentativa de login no firebase
+      await signInWithEmailAndPassword(auth, email, password);
       setIsLoading(false);
-
       router.replace('/(hub)/dashboard'); 
-    }, 1500);
+    } catch (e) {
+      // Caso ocorra erro ao logar
+      setIsLoading(false);
+      setEmailError('E-mail ou senha incorretos.');
+      setPasswordError('E-mail ou senha incorretos.');
+    }
   };
 
   const handleRegister = () => {
-    // TODO: Navegar para tela de registro do Expo Router -> router.push('/register')
+    router.push('/(register)/register');
   };
 
   return (
@@ -99,7 +109,7 @@ export default function LoginScreen() {
 
             <Input
               label="Senha"
-              placeholder="Sua senha secreta"
+              placeholder="Preencha com sua senha"
               secureTextEntry
               autoCapitalize="none"
               value={password}
