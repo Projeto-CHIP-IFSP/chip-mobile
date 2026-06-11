@@ -1,0 +1,145 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import { useRouter } from 'expo-router';
+import { theme } from '../../src/constants/theme';
+import { Button } from '../../src/components/Button';
+
+export default function DashboardScreen() {
+  const router = useRouter();
+
+  const [studying, setStudying] = useState(false);
+  const [tempo, setTempo] = useState(0);
+  const [chipState, setChipState] = useState<'idle' | 'starting' | 'studying'>('idle');
+
+  const gifStates = {
+    idle: require('../../assets/gifs/chipIdle.gif'),
+    starting: require('../../assets/gifs/chipStarting.gif'),
+    studying: require('../../assets/gifs/chipStudying.gif'),
+  };
+
+  useEffect(() => {
+    if (!studying) return;
+
+    const interval = setInterval(() => {
+      setTempo(sec => sec + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [studying]);
+
+  const formatTime = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    return [hours, minutes, seconds]
+      .map(unit => String(unit).padStart(2, '0'))
+      .join(':');
+  }
+
+  const startStudy = () => {
+    if (chipState !== 'idle') return;
+    setTempo(0);
+    setChipState('starting');
+
+    setTimeout(() => {
+      setChipState('studying');
+      setStudying(true);
+    }, 3000); // Alterar se quiser o mudar o tempo de start
+  };
+
+  const stopStudy = () => {
+    setStudying(false);
+    setTempo(0);
+    setChipState('idle');
+  };
+  
+  
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.content}>
+        <Text style={styles.title}>Sessão de Estudo</Text>
+        <Text style={styles.timer}>
+            {formatTime(tempo)}
+        </Text>
+      </View>
+
+      <View style={styles.content}>
+        <Image
+          source={
+          gifStates[chipState]
+          }
+          style={styles.chip}
+        />
+      </View>
+      
+
+      <View style={styles.content}>
+        <Text style={styles.subtitle}>
+          {studying
+            ? 'Sessão em andamento'
+            : 'Mantenha o foco durante seus estudos'
+          }
+        </Text>
+
+        <Button
+          title={
+            studying
+              ? 'Encerrar Sessão'
+              : 'Iniciar Sessão'
+          }
+          onPress={
+            studying
+              ? stopStudy
+              : startStudy
+          }
+        />
+      </View>
+
+      
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: 24,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 28,
+    color: theme.colors.text,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 16,
+    color: theme.colors.accent,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  chip: {
+    width: 220,
+    height: 220,
+    marginBottom: 24,
+    resizeMode: 'contain',
+  },
+  timer: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 42,
+    color: theme.colors.primary,
+    marginBottom: 32,
+  },
+  logoutButton: {
+    marginBottom: 40,
+  }
+});
