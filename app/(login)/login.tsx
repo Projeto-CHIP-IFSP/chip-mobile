@@ -136,7 +136,7 @@ export default function LoginScreen() {
             <Button 
               title="teste (secreto) de camera" 
               variant="ghost" 
-              onPress={() => router.push('/(cam-teste)/cam-teste')}
+              onPress={() => router.push('/(focus)/focus')}
             />
 
           </View>

@@ -1,8 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Image, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '../../src/constants/theme';
 import { Button } from '../../src/components/Button';
+import { Camera, useCameraDevice, useCameraPermission, useFrameProcessor} from 'react-native-vision-camera';
+import { Worklets } from 'react-native-worklets-core';
+
+
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -16,6 +20,22 @@ export default function DashboardScreen() {
     starting: require('../../assets/gifs/chipStarting.gif'),
     studying: require('../../assets/gifs/chipStudying.gif'),
   };
+
+
+  const camUser = useCameraDevice('front');
+  const camRef = useRef<any>(null);
+  const permUser = useCameraPermission();
+
+  const latestFrame = useRef<any>(null);
+
+  const frameProcessor = useFrameProcessor((frame) => {
+    'worklet';
+
+    console.log(
+      frame.width,
+      frame.height
+    );
+  }, []);
 
   useEffect(() => {
     if (!studying) return;
@@ -58,6 +78,38 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
+
+      {
+        camUser && (
+          <Camera
+            ref={camRef}
+            style={styles.hiddenCamera}
+            device={camUser}
+            isActive={studying}
+            frameProcessor={frameProcessor}
+          />
+        )
+      }
+      
+      <Modal
+        visible={!permUser.hasPermission}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <View style={styles.content}>
+              <Text style={styles.title}>Um segundo!</Text>
+              <Text style={styles.subtitle}>Ainda não temos a permissão da câmera.</Text>
+              <Button 
+                title="Permitir"
+                onPress={permUser.requestPermission} 
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <View style={styles.content}>
         <Text style={styles.title}>Sessão de Estudo</Text>
         <Text style={styles.timer}>
@@ -97,6 +149,8 @@ export default function DashboardScreen() {
         />
       </View>
 
+
+
       
     </View>
   );
@@ -127,6 +181,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBox: {
+    width: '80%',
+    height: '25%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+  },
+
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+
+  modalText: {
+    marginBottom: 20,
+  },
   chip: {
     width: 220,
     height: 220,
@@ -141,5 +218,11 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginBottom: 40,
+  },
+  hiddenCamera: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    opacity: 1
   }
 });
