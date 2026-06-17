@@ -1,6 +1,7 @@
-// Importando as funções do firebase
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { initializeApp } from 'firebase/app';
+// @ts-expect-error - O método getReactNativePersistence existe no bundle nativo de React Native do Firebase, mas não é exposto nas tipagens Web padrão.
+import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configurações do nosso projeto puxando do env
 const firebaseConfig = {
@@ -15,5 +16,7 @@ const firebaseConfig = {
 // Inicializando o firebase
 const app = initializeApp(firebaseConfig);
 
-// Exportando o serviço de autenticação
-export const auth = getAuth(app);
+// Exportando o serviço de autenticação com persistência nativa estável
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage),
+});

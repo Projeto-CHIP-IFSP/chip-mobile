@@ -132,6 +132,13 @@ export default function LoginScreen() {
               onPress={handleRegister} 
               disabled={isLoading}
             />
+
+            <Button 
+              title="teste (secreto) de camera" 
+              variant="ghost" 
+              onPress={() => router.push('/(cam-teste)/cam-teste')}
+            />
+
           </View>
         </View>
       </KeyboardAvoidingView>
