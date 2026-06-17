@@ -13,6 +13,10 @@ export default function DashboardScreen() {
     router.replace('/(login)/login');
   };
 
+  const handleFocus = () => {
+    router.push('/(focus)/focus');
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -23,11 +27,18 @@ export default function DashboardScreen() {
       </View>
 
       <Button 
+        title="Tela de Foco" 
+        onPress={handleFocus}
+      />
+
+      <Button 
         title="Sair (Logout)" 
         variant="ghost" 
         onPress={handleLogout} 
         style={styles.logoutButton}
       />
+
+      
     </View>
   );
 }
