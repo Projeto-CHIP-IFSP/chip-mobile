@@ -39,7 +39,9 @@
     "react-native-screens": "~4.16.0",
     "react-native-vision-camera": "^4.7.3",
     "react-native-web": "~0.21.0",
-    "react-native-worklets-core": "^1.6.3"
+    "react-native-worklets-core": "^1.6.3",
+    "vision-camera-face-detector-v4-expo53": "^1.1.0",
+    "vision-camera-resize-plugin": "^3.2.0"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
